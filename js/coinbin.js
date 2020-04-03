@@ -202,7 +202,9 @@ $(document).ready(function() {
 
 				tx2.broadcast(function(data){
 					if(data.search("txid")!=-1){
-						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('txid: <a href="'+$("#coinjs_pub").val() == 0x6f ? test_explorer_tx: explorer_tx+$(data).find("txid").text()+'" target="_blank">'+$(data).find("txid").text()+'</a>');
+						explorer = ($("#coinjs_pub").val() == 0x6f ? test_explorer_tx: explorer_tx);
+						txid = JSON.parse(data).txid
+						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('txid: <a href="'+ explorer +txid+'" target="_blank">'+txid+'</a>');
 //					if($(data).find("result").text()=="1"){
 //						$("#walletSendConfirmStatus").removeClass('hidden').addClass('alert-success').html('txid: <a href="https://coinb.in/tx/'+$(data).find("txid").text()+'" target="_blank">'+$(data).find("txid").text()+'</a>');
 					} else {
