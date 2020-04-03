@@ -1,7 +1,7 @@
 coinbin
 =======
 
-A Open Source Browser Based Groestlcoin Wallet. Version 1.4 beta
+A Open Source Browser Based Groestlcoin Wallet. Version 1.5 beta
 
 
 Live version available at http://groestlcoin.org/webwallet

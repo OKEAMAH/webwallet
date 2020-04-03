@@ -24,6 +24,10 @@
 	/* bit(coinb.in) api vars */
 	coinjs.host = 'https://groestlsight.groestlcoin.org/api/';
 	coinjs.host_test = 'https://groestlsight-test.groestlcoin.org/api/';
+
+	//TODO: Tor support
+	//coinjs.hostname	= ((document.location.hostname.split(".")[(document.location.hostname.split(".")).length-1]) == 'onion') ? '4zpinp6gdkjfplhk.onion' : 'coinb.in';
+	//coinjs.host = ('https:'==document.location.protocol?'https://':'http://')+coinjs.hostname+'/api/';
 	coinjs.uid = '1';
 	coinjs.key = '12345678901234567890123456789012';
 
@@ -161,7 +165,11 @@
 		}
 
 		var s = coinjs.script();
-		s.writeBytes(coinjs.numToByteArray(checklocktimeverify));
+		if (checklocktimeverify <= 16 && checklocktimeverify >= 1) {
+			s.writeOp(0x50 + checklocktimeverify);//OP_1 to OP_16 for minimal encoding
+		} else {
+			s.writeBytes(coinjs.numToScriptNumBytes(checklocktimeverify));
+		}
 		s.writeOp(177);//OP_CHECKLOCKTIMEVERIFY
 		s.writeOp(117);//OP_DROP
 		s.writeBytes(Crypto.util.hexToBytes(pubkey));
@@ -204,7 +212,7 @@
 		var decode = coinjs.bech32_decode(address);
 		if(decode){
 			decode.data.shift();
-			return Crypto.util.bytesToHex(coinjs.bech32_convert(decode.data, 5, 8, true));
+			return Crypto.util.bytesToHex(coinjs.bech32_convert(decode.data, 5, 8, false));
 		}
 		return r;
 	}
@@ -317,7 +325,7 @@
 					return {'type':'bech32', 'redeemscript':bech32rs};
 				}
 
-				return false;
+				throw "Invalid checksum";
 			}
 		} catch(e) {
 			bech32rs = coinjs.bech32redeemscript(addr);
@@ -650,6 +658,8 @@
 
 				coinjs.compressed = c; // reset to default
 			}
+
+			return r;
 		}
 
 		// extend prv/pub key
@@ -663,8 +673,37 @@
 				'pubkey':this.keys.pubkey});
 		}
 
+		// derive from path
+		r.derive_path = function(path) {
+
+			if( path == 'm' || path == 'M' || path == 'm\'' || path == 'M\'' ) return this;
+
+			var p = path.split('/');
+			var hdp = coinjs.clone(this);  // clone hd path
+
+			for( var i in p ) {
+
+				if((( i == 0 ) && c != 'm') || i == 'remove'){
+					continue;
+				}
+
+				var c = p[i];
+
+				var use_private = (c.length > 1) && (c[c.length-1] == '\'');
+				var child_index = parseInt(use_private ? c.slice(0, c.length - 1) : c) & 0x7fffffff;
+				if(use_private)
+					child_index += 0x80000000;
+
+				hdp = hdp.derive(child_index);
+				var key = ((hdp.keys_extended.privkey) && hdp.keys_extended.privkey!='') ? hdp.keys_extended.privkey : hdp.keys_extended.pubkey;
+				hdp = coinjs.hd(key);
+			}
+			return hdp;
+		}
+
 		// derive key from index
 		r.derive = function(i){
+
 			i = (i)?i:0;
 			var blob = (Crypto.util.hexToBytes(this.keys.pubkey)).concat(coinjs.numToBytes(i,4).reverse());
 
@@ -719,7 +758,6 @@
 
 			o.parent_fingerprint = (ripemd160(Crypto.SHA256(Crypto.util.hexToBytes(r.keys.pubkey),{asBytes:true}),{asBytes:true})).slice(0,4);
 			o.keys_extended = o.extend();
-
 			return o;
 		}
 
@@ -784,8 +822,7 @@
 			return o;
 		}
 
-		r.parse();
-		return r;
+		return r.parse();
 	}
 
 
@@ -1947,12 +1984,31 @@
 		}
 	}
 
-	coinjs.numToByteArray = function(num) {
-		if (num <= 256) {
-			return [num];
-		} else {
-			return [num % 256].concat(coinjs.numToByteArray(Math.floor(num / 256)));
+	function scriptNumSize(i) {
+		return i > 0x7fffffff ? 5
+			: i > 0x7fffff ? 4
+			: i > 0x7fff ? 3
+			: i > 0x7f ? 2
+			: i > 0x00 ? 1
+			: 0;
+	}
+
+	coinjs.numToScriptNumBytes = function(_number) {
+		var value = Math.abs(_number);
+		var size = scriptNumSize(value);
+		var result = [];
+		for (var i = 0; i < size; ++i) {
+			result.push(0);
 		}
+		var negative = _number < 0;
+		for (i = 0; i < size; ++i) {
+			result[i] = value & 0xff;
+			value = Math.floor(value / 256);
+		}
+		if (negative) {
+			result[size - 1] |= 0x80;
+		}
+		return result;
 	}
 
 	coinjs.numToVarInt = function(num) {
