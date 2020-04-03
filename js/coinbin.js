@@ -925,8 +925,16 @@ $(document).ready(function() {
 		} else if(host=='groestlsight.groestlcoin.org') {
             listUnspentGroestlsight_Groestlcoin(redeem, false);
 		} else if(host=='groestlsight-test.groestlcoin.org') {
-            listUnspentGroestlsight_Groestlcoin(redeem, true);
-		} else {
+			listUnspentGroestlsight_Groestlcoin(redeem, true);
+		} else if(host=='esplora.groestlcoin.org') {
+			listUnspentEsplora_Groestlcoin(redeem, false);
+		} else if(host=='esplora-test.groestlcoin.org') {
+			listUnspentEsplora_Groestlcoin(redeem, true);
+		} else if(host=='blockbook.groestlcoin.org') {
+			listUnspentBlockbook_Groestlcoin(redeem, false);
+		} else if(host=='blockbook-test.groestlcoin.org') {
+			listUnspentBlockbook_Groestlcoin(redeem, true);
+		}else {
 			listUnspentChainz_Groestlcoin(redeem, false);
 		}
 
@@ -1205,6 +1213,7 @@ $(document).ready(function() {
 		});
 	}
 
+			}
 	/* math to calculate the inputs and outputs */
 
 	function totalInputAmount(){
