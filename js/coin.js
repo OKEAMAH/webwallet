@@ -614,7 +614,7 @@
 				var decoded = coinjs.base58decode(data);
 				if(decoded.length == 82){
 					var checksum = decoded.slice(78, 82);
-					var hash = Crypto.SHA256(Crypto.SHA256(decoded.slice(0, 78), { asBytes: true } ), { asBytes: true } );
+					var hash = Crypto.util.hexToBytes(Module.ccall('GroestlCoinHash', 'string', ['string'], [Crypto.util.bytesToHex(decoded.slice(0, 78))]));//Crypto.SHA256(Crypto.SHA256(decoded.slice(0, 78), { asBytes: true } ), { asBytes: true } );
 					if(checksum[0]==hash[0] && checksum[1]==hash[1] && checksum[2]==hash[2] && checksum[3]==hash[3]){
 						bytes = decoded.slice(0, 78);
 					}
@@ -803,7 +803,7 @@
 				prv = prv.concat(k);
 				prv.push(0x00);
 				prv = prv.concat(Crypto.util.hexToBytes(data.privkey));
-				var hash = Crypto.SHA256( Crypto.SHA256(prv, { asBytes: true } ), { asBytes: true } );
+				var hash = Crypto.util.hexToBytes(Module.ccall('GroestlCoinHash', 'string', ['string'], [Crypto.util.bytesToHex(prv)]));
 				var checksum = hash.slice(0, 4);
 				var ret = prv.concat(checksum);
 				o.privkey = coinjs.base58encode(ret);
@@ -814,7 +814,7 @@
 				var pub = (coinjs.numToBytes(coinjs.hdkey.pub, 4)).reverse();
 				pub = pub.concat(k);
 				pub = pub.concat(Crypto.util.hexToBytes(data.pubkey));
-				var hash = Crypto.SHA256( Crypto.SHA256(pub, { asBytes: true } ), { asBytes: true } );
+				var hash = Crypto.util.hexToBytes(Module.ccall('GroestlCoinHash', 'string', ['string'], [Crypto.util.bytesToHex(pub)]));
 				var checksum = hash.slice(0, 4);
 				var ret = pub.concat(checksum);
 				o.pubkey = coinjs.base58encode(ret);
