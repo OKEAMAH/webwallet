@@ -1213,7 +1213,133 @@ $(document).ready(function() {
 		});
 	}
 
+	/* retrieve unspent data from InsightAPI for groestlcoin */
+	function listUnspentEsplora_Groestlcoin(redeem, testnet){
+		var unspentUrl = testnet ? "https://esplora-test.groestlcoin.org/api/address/" :
+			"https://esplora.groestlcoin.org/api/address/"
+		$.ajax ({
+			type: "GET",
+			url: unspentUrl+redeem.addr+"/utxo",
+			dataType: "json",
+			crossDomain: true,
+			error: function(data) {
+				$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
+			},
+			success: function(data) {
+				if(data.length > 0){
+					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+(testnet ? test_explorer_addr : explorer_addr)+redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+					for(i = 0; i < data.length; ++i){
+						var o = data[i];
+						var tx =o.txid//).match(/.{1,2}/g).reverse()).join("")+'';
+						var n = o.vout;
+						var script = (redeem.redeemscript==true) ? (redeem.from == "bech32" ? coinjs.bech32redeemscript($("#redeemFrom").val()) :  $("#redeemFrom").val()) : undefined;
+						var amount = (o.value /100000000).toFixed(8);
+						//we have to query the tx info, because there is no script in the results
+						if(script !== undefined)
+							addOutput(((tx).match(/.{1,2}/g).reverse()).join("")+'', n, script, amount);
+						else finishListUnspentEsplora_Groestlcoin(testnet, tx, n, amount)
+					}
+				} else {
+					$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> No unspent outputs found.');
+				}
+			},
+			complete: function(data, status) {
+				$("#redeemFromBtn").html("Load").attr('disabled',false);
+				totalInputAmount();
 			}
+		});
+	}
+
+	/* retrieve unspent data from InsightAPI for groestlcoin */
+	function finishListUnspentEsplora_Groestlcoin(testnet, txid, n, amount){
+		var unspentUrl = testnet ? "https://esplora-test.groestlcoin.org/api/tx/" :
+			"https://esplora.groestlcoin.org/api/tx/"
+		$.ajax ({
+			type: "GET",
+			url: unspentUrl+txid,
+			dataType: "json",
+			error: function(data) {
+				$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
+			},
+			success: function(data) {
+				if(data){
+					script = data.vout[n].scriptpubkey
+					//$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+(testnet ? test_explorer_addr : explorer_addr)+redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+					addOutput(((txid).match(/.{1,2}/g).reverse()).join("")+'', n, script, amount);
+			
+				} else {
+					$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> No unspent outputs found.');
+				}
+			},
+			complete: function(data, status) {
+				$("#redeemFromBtn").html("Load").attr('disabled',false);
+				totalInputAmount();
+			}
+		});
+	}
+
+			/* retrieve unspent data from InsightAPI for groestlcoin */
+	function listUnspentBlockbook_Groestlcoin(redeem, testnet){
+		var unspentUrl = testnet ? "https://blockbook-test.groestlcoin.org/api/v2/utxo/" :
+			"https://blockbook.groestlcoin.org/api/v2/utxo/"
+		$.ajax ({
+			type: "GET",
+			url: unspentUrl+redeem.addr,
+			dataType: "json",
+			error: function(data) {
+				$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
+			},
+			success: function(data) {
+				if(data.length > 0){
+					$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+(testnet ? test_explorer_addr : explorer_addr)+redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+					for(i = 0; i < data.length; ++i){
+						var o = data[i];
+						var tx = o.txid;
+						var n = o.vout;
+						var script = (redeem.redeemscript==true) ? (redeem.from == "bech32" ? coinjs.bech32redeemscript($("#redeemFrom").val()) :  $("#redeemFrom").val()) : o.scriptPubKey;
+						var amount = (o.value /100000000).toFixed(8);
+						//TODO:  need to call the get tx to get the script
+						if(script !== undefined)
+						addOutput(((tx).match(/.{1,2}/g).reverse()).join("")+'', n, script, amount);
+						else finishListUnspentBlockbook_Groestlcoin(testnet, tx, n, amount)
+					}
+				} else {
+					$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> No unspent outputs found.');
+				}
+			},
+			complete: function(data, status) {
+				$("#redeemFromBtn").html("Load").attr('disabled',false);
+				totalInputAmount();
+			}
+		});
+	}
+	/* retrieve unspent data from InsightAPI for groestlcoin */
+	function finishListUnspentBlockbook_Groestlcoin(testnet, txid, n, amount){
+		var unspentUrl = testnet ? "https://blockbook-test.groestlcoin.org/api/v2/tx/" :
+			"https://blockbook.groestlcoin.org/api/v2/tx/"
+		$.ajax ({
+			type: "GET",
+			url: unspentUrl+txid,
+			dataType: "json",
+			error: function(data) {
+				$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> Unexpected error, unable to retrieve unspent outputs!');
+			},
+			success: function(data) {
+				if(data){
+					script = data.vout[n].hex
+					//$("#redeemFromAddress").removeClass('hidden').html('<span class="glyphicon glyphicon-info-sign"></span> Retrieved unspent inputs from address <a href="'+(testnet ? test_explorer_addr : explorer_addr)+redeem.addr+'" target="_blank">'+redeem.addr+'</a>');
+					addOutput(((txid).match(/.{1,2}/g).reverse()).join("")+'', n, script, amount);
+			
+				} else {
+					$("#redeemFromStatus").removeClass('hidden').html('<span class="glyphicon glyphicon-exclamation-sign"></span> No unspent outputs found.');
+				}
+			},
+			complete: function(data, status) {
+				$("#redeemFromBtn").html("Load").attr('disabled',false);
+				totalInputAmount();
+			}
+		});
+	}
 	/* math to calculate the inputs and outputs */
 
 	function totalInputAmount(){
@@ -1387,8 +1513,72 @@ $(document).ready(function() {
 		});
 	}
 
+    function rawSubmitEsplora_Groestlcoin(thisbtn, testnet){
+		broadcastUrl = testnet ? "https://esplora-test.groestlcoin.org/api/tx" :
+			"https://esplora.groestlcoin.org/api/tx"
+        $(thisbtn).val('Please wait, loading...').attr('disabled',true);
+        $.ajax ({
+            type: "POST",
+            url: broadcastUrl,
+            data: $("#rawTransaction").val(),
+			dataType: "text",
+			contentType: "text/plain",
+            error: function(data, status, error) {
+                //var obj = data.responseText;
+                var r = ' ';
+                r += (data.responseText.length) ? data.responseText : '';
+                r = (r!=' ') ? r : ' Failed to broadcast'; // build response
+                $("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(r).prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+            },
+            success: function(data) {
+                //var obj = $.parseJSON(data.responseText);
+                if(data){
+                    $("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+data);
+                } else {
+                    $("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unexpected error, please try again').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+                }
+            },
+            complete: function(data, status) {
+                $("#rawTransactionStatus").fadeOut().fadeIn();
+                $(thisbtn).val('Submit').attr('disabled',false);
+            }
+        });
+	}
+	
+	function rawSubmitBlockbook_Groestlcoin(thisbtn, testnet){
+		broadcastUrl = testnet ? "https://blockbook-test.groestlcoin.org/api/v2/sendtx/" :
+			"https://blockbook.groestlcoin.org/api/v2/sendtx/"
+        $(thisbtn).val('Please wait, loading...').attr('disabled',true);
+        $.ajax ({
+            type: "POST",
+            url: broadcastUrl,
+            data: $("#rawTransaction").val(),
+			dataType: "json",
+			contentType: "text/plain",
+            error: function(data, status, error) {
+                //var obj = data.responseText;
+                var r = ' ';
+                r += (data.responseText.length) ? JSON.parse(data.responseText).error : '';
+                r = (r!=' ') ? r : ' Failed to broadcast'; // build response
+                $("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(r).prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+            },
+            success: function(data) {
+                //var obj = $.parseJSON(data.responseText);
+                if(data.result){
+                    $("#rawTransactionStatus").addClass('alert-success').removeClass('alert-danger').removeClass("hidden").html(' Txid: '+data.result);
+                } else {
+                    $("#rawTransactionStatus").addClass('alert-danger').removeClass('alert-success').removeClass("hidden").html(' Unexpected error, please try again').prepend('<span class="glyphicon glyphicon-exclamation-sign"></span>');
+                }
+            },
+            complete: function(data, status) {
+                $("#rawTransactionStatus").fadeOut().fadeIn();
+                $(thisbtn).val('Submit').attr('disabled',false);
+            }
+        });
+	}
+	
     function rawSubmitGroestlsight_Groestlcoin(thisbtn, testnet){
-		broadcastUrl = testnet ? "http://groestlsight-test.groestlcoin.org/api/tx/send" :
+		broadcastUrl = testnet ? "https://groestlsight-test.groestlcoin.org/api/tx/send" :
 			"https://groestlsight.groestlcoin.org/api/tx/send"
         $(thisbtn).val('Please wait, loading...').attr('disabled',true);
         $.ajax ({
@@ -1976,6 +2166,22 @@ $(document).ready(function() {
 		} else if(host=="chainz.cryptoid.info-test") {
 			$("#rawSubmitBtn").click(function(){
                 rawSubmitChainz_Groestlcoin(this, true);
+			});
+		} else if(host=="blockbook.groestlcoin.org") {
+			$("#rawSubmitBtn").click(function(){
+                rawSubmitBlockbook_Groestlcoin(this, false);
+			});
+		} else if(host=="esplora.groestlcoin.org") {
+			$("#rawSubmitBtn").click(function(){
+                rawSubmitEsplora_Groestlcoin(this, false);
+			});
+		} else if(host=="blockbook-test.groestlcoin.org") {
+			$("#rawSubmitBtn").click(function(){
+                rawSubmitBlockbook_Groestlcoin(this, true);
+			});
+		} else if(host=="esplora-test.groestlcoin.org") {
+			$("#rawSubmitBtn").click(function(){
+                rawSubmitEsplora_Groestlcoin(this, true);
 			});
 		} else {
 			$("#rawSubmitBtn").click(function(){
